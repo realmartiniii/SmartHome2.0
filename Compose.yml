@@ -1,0 +1,45 @@
+
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: jarvis-homeassistant
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+    volumes:
+      - ./homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+    stop_grace_period: 60s
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: jarvis-mqtt
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    networks:
+      - jarvis-net
+
+  jarvis:
+    build: ./jarvis
+    container_name: jarvis-python
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mosquitto
+      - homeassistant
+    networks:
+      - jarvis-net
+
+networks:
+  jarvis-net:
+    driver: bridge
