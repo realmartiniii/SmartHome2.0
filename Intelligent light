@@ -1,0 +1,45 @@
+
+alias: "JARVIS - Intelligente Beleuchtung"
+description: "Reagiert auf Bewegung und passt das Licht an die Uhrzeit an."
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.flur_bewegung
+    to: "on"
+
+conditions: []
+
+actions:
+  - choose:
+      - conditions:
+          - condition: time
+            after: "23:00:00"
+            before: "06:00:00"
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: light.flur
+            data:
+              brightness_pct: 15
+              transition: 2
+
+    default:
+      - action: light.turn_on
+        target:
+          entity_id: light.flur
+        data:
+          brightness_pct: 80
+          transition: 2
+
+  - wait_for_trigger:
+      - trigger: state
+        entity_id: binary_sensor.flur_bewegung
+        to: "off"
+        for: "00:02:00"
+
+  - action: light.turn_off
+    target:
+      entity_id: light.flur
+    data:
+      transition: 3
+
+mode: restart
